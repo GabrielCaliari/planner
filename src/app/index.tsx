@@ -122,7 +122,17 @@ enum MODAL {
 
           <Input>
             <UserRoundPlus color={colors.zinc[400]} size={20}/>
-            <Input.Field placeholder="Quem estará na viagem?"/>
+            <Input.Field placeholder="Quem estará na viagem?" autoCorrect={false}
+            value={
+              emailsToInvite.length > 0
+               ? `${emailsToInvite.length} pessoas(a) convidadas` : ""
+            }
+            onPress={() => {
+              Keyboard.dismiss()
+              setShowModal(MODAL.GUESTS)
+            }}
+            showSoftInputOnFocus={false}
+            />
           </Input>
             </>
           )}
@@ -166,7 +176,9 @@ enum MODAL {
 
           </Modal>
 
-        <Modal title="Selecionar convidados" subtitle="Os convidados irão receber e-mails para a confirmar a participação da viagem.">
+        <Modal title="Selecionar convidados" subtitle="Os convidados irão receber e-mails para a confirmar a participação da viagem."
+        visible={showModal === MODAL.GUESTS}
+        onClose={() => setShowModal(MODAL.NONE)}>
           <View className="my-2 flex-wrap gap-2 border-b border-zinc-800 py-5 items-start">
             {
               emailsToInvite.length > 0 ? (
@@ -182,7 +194,12 @@ enum MODAL {
           <View className="gap-4 mt-4">
               <Input variant="secondary">
                  <AtSign color={colors.zinc[400]} size={20}/>
-                 <Input.Field placeholder="Digite o e-mail do convidado" keyboardType="email-address" onChangeText={(text) => setEmailToInvite(text.toLowerCase())} value={emailToInvite}/>
+                 <Input.Field
+                 placeholder="Digite o e-mail do convidado"
+                 keyboardType="email-address"
+                 onChangeText={(text) => setEmailToInvite(text.toLowerCase())}
+                 value={emailToInvite}
+                 onSubmitEditing={handleAddEmail}/>
               </Input>
               <Button onPress={handleAddEmail}>
                 <Button.Title>Convidar</Button.Title>
