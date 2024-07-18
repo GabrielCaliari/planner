@@ -2,7 +2,7 @@ import { api } from "./api";
 
 export type TripDetails = {
   id: string;
-  destinantion: string;
+  destination: string;
   starts_at: string;
   ends_at: string;
   is_confirmed: boolean;
@@ -21,10 +21,10 @@ async function getById(id: string) {
   }
 }
 
-async function create({destinantion, starts_at, ends_at, emails_to_invite}: TripCreate) {
+async function create({destination, starts_at, ends_at, emails_to_invite}: TripCreate) {
   try {
     const {data} = await api.post<{tripId: string}>('/trips', {
-      destinantion,
+      destination,
       starts_at,
       ends_at,
       emails_to_invite,

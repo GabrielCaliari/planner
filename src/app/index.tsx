@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/input";
 import { Alert, Image, Keyboard, Text, View} from "react-native";
 import {MapPin, Calendar as IconCalendar, Settings2, UserRoundPlus, ArrowRight, AtSign} from "lucide-react-native";
@@ -11,6 +11,10 @@ import { DateData } from "react-native-calendars";
 import dayjs from "dayjs";
 import { GuestEmail } from "@/components/email";
 import { validateInput } from "@/utils/validateInput";
+import { tripStorage } from "@/storage/trip";
+import { router } from "expo-router";
+import { tripServer } from "@/server/trip-server";
+import { Loading } from "@/components/loading";
 
 enum StepForm {
   TRIP_DETAILS = 1,
@@ -24,12 +28,14 @@ enum MODAL {
 }
 
  export default function Index(){
+  const [isCreateTrip, setIsCreateTrip] = useState(false)
   const [stepForm, setStepForm] = useState(StepForm.TRIP_DETAILS)
   const [showModal, setShowModal] = useState(MODAL.NONE)
   const [selectedDates, setSelectedDates] = useState({} as DatesSelected)
-  const [destination, setDestination] = useState()
-  const [emailToInvite, setEmailToInvite] = useState()
+  const [destination, setDestination] = useState("")
+  const [emailToInvite, setEmailToInvite] = useState("")
   const [emailsToInvite, setEmailsToInvite] = useState<string[]>([])
+  const [isGettingTrip, setIsGettingTrip] = useState(true)
 
   function handleNextStepForm() {
     if (
@@ -53,6 +59,17 @@ enum MODAL {
       if (stepForm === StepForm.TRIP_DETAILS) {
         return setStepForm(StepForm.ADD_EMAIL)
       }
+
+    Alert.alert("Nova viagem", "Confirmar viagem?", [
+      {
+        text: "Nao",
+        style: "cancel",
+      },
+      {
+        text: "Sim",
+        onPress: createTrip,
+      }
+    ])
   }
 
   function handleSelectDate(selectedDay: DateData) {
@@ -86,6 +103,57 @@ enum MODAL {
     setEmailsToInvite((prevState) => [...prevState, emailToInvite])
     setEmailToInvite("")
   }
+
+  async function saveTrip(tripId: string) {
+    try {
+      await tripStorage.save(tripId)
+      router.navigate("/trip/" + tripId)
+    } catch (error) {
+      Alert.alert("Salvar viagem", "Não foi possivel salvar o id da viagem no dispositivo!")
+    }
+  }
+
+  async function createTrip() {
+    try {
+      setIsCreateTrip(true)
+
+      const newTrip = await tripServer.create({
+        destination,
+        starts_at: dayjs(selectedDates.startsAt?.dateString).toString(),
+        ends_at: dayjs(selectedDates.endsAt?.dateString).toString(),
+        emails_to_invite: emailsToInvite,
+      })
+
+      Alert.alert("Nova viagem", "Viagem criada com sucesso", [
+        {
+          text: "Ok, Continuar.",
+          onPress: () => saveTrip(newTrip.tripId),
+        }
+      ])
+    } catch (error) {
+      setIsCreateTrip(false)
+    }
+  }
+
+  async function getTrip() {
+    try {
+      const tripId = await tripStorage.get()
+
+      if (!tripId) {
+        return setIsCreateTrip(false)
+      }
+
+      const trip = await tripServer.getById(tripId)
+
+      if(trip){
+        return router.navigate("trip/" + trip.id)
+      }
+
+    } catch (error) {
+      setIsGettingTrip(false)
+    }
+  }
+
 
     return (
       <View className="flex-1 items-center justify-center px-5">
@@ -125,7 +193,7 @@ enum MODAL {
             <Input.Field placeholder="Quem estará na viagem?" autoCorrect={false}
             value={
               emailsToInvite.length > 0
-               ? `${emailsToInvite.length} pessoas(a) convidadas` : ""
+               ? `${emailsToInvite.length} pessoas(a) convidada(s)` : ""
             }
             onPress={() => {
               Keyboard.dismiss()
@@ -138,7 +206,7 @@ enum MODAL {
           )}
 
 
-          <Button onPress={handleNextStepForm}>
+          <Button onPress={handleNextStepForm} isLoading={isCreateTrip}>
                 <Button.Title>
                   {
                     stepForm === StepForm.TRIP_DETAILS
