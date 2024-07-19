@@ -29,13 +29,13 @@ enum MODAL {
 
  export default function Index(){
   const [isCreateTrip, setIsCreateTrip] = useState(false)
+  const [isGettingTrip, setIsGettingTrip] = useState(true)
   const [stepForm, setStepForm] = useState(StepForm.TRIP_DETAILS)
   const [showModal, setShowModal] = useState(MODAL.NONE)
   const [selectedDates, setSelectedDates] = useState({} as DatesSelected)
   const [destination, setDestination] = useState("")
   const [emailToInvite, setEmailToInvite] = useState("")
   const [emailsToInvite, setEmailsToInvite] = useState<string[]>([])
-  const [isGettingTrip, setIsGettingTrip] = useState(true)
 
   function handleNextStepForm() {
     if (
@@ -137,21 +137,30 @@ enum MODAL {
 
   async function getTrip() {
     try {
-      const tripId = await tripStorage.get()
+      const tripID = await tripStorage.get()
 
-      if (!tripId) {
-        return setIsCreateTrip(false)
+      if (!tripID) {
+        return setIsGettingTrip(false)
       }
 
-      const trip = await tripServer.getById(tripId)
+      const trip = await tripServer.getById(tripID)
+      console.log(trip)
 
-      if(trip){
-        return router.navigate("trip/" + trip.id)
+      if (trip) {
+        return router.navigate("/trip/" + trip.id)
       }
-
     } catch (error) {
       setIsGettingTrip(false)
+      console.log(error)
     }
+  }
+
+  useEffect(() => {
+    getTrip()
+  }, [])
+
+  if (isGettingTrip) {
+    return <Loading />
   }
 
 

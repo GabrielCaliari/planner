@@ -38,7 +38,7 @@ function Button({
           "bg-lime-300": variant === "primary",
           "bg-zinc-800": variant === "secondary",
         },
-        className
+        className,
       )}>
       <ThemeContext.Provider value={{ variant }}>
         {isLoading ? <ActivityIndicator className="text-lime-950" /> : children}
