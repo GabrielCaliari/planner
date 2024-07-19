@@ -5,7 +5,7 @@ import { TripDetails, tripServer } from "@/server/trip-server";
 import { colors } from "@/styles/colors";
 import dayjs from "dayjs";
 import { router, useLocalSearchParams } from "expo-router";
-import { MapPin, Settings2 } from "lucide-react-native";
+import { CalendarRange, Info, MapPin, Settings2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -14,7 +14,7 @@ type TripData = TripDetails& {when: string}
 export default function Trip() {
   const [isLoadingTrip, setIsLoadingTrip] = useState(true)
   const [tripDetails, setTripDetails] = useState({} as TripData)
-  const [option, setOption] = useState<"activity" | "details ">("activity")
+  const [option, setOption] = useState<"activity" | "details">("activity")
 
   const tripId = useLocalSearchParams<{id: string}>().id
 
@@ -71,10 +71,18 @@ export default function Trip() {
 
     <View className="w-full absolute -bottom-1 self-center justify-end pb-5 z-10 bg-zinc-950">
         <View className="w-full flex-row bg-zinc-900 p-4 rounded-lg border border-zinc-800  gap-2">
-            <Button className="flex-1 w-48">
+            <Button className="flex-1 w-48" onPress={() => setOption("activity")}
+              variant={option === "activity" ? "primary" : "secondary"}>
+              <CalendarRange color={
+                option === "activity" ? colors.lime[950] : colors.zinc[200]
+              } size={20}/>
               <Button.Title>Atividades</Button.Title>
             </Button>
-            <Button className="flex-1 w-44 ">
+            <Button className="flex-1 w-44 " onPress={() => setOption("details")}
+              variant={option === "details" ? "primary" : "secondary"}>
+              <Info color={
+                option === "details" ? colors.lime[950] : colors.zinc[200]
+              } size={20}/>
               <Button.Title>Detalhes</Button.Title>
             </Button>
         </View>
