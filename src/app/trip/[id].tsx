@@ -5,12 +5,15 @@ import { TripDetails, tripServer } from "@/server/trip-server";
 import { colors } from "@/styles/colors";
 import dayjs from "dayjs";
 import { router, useLocalSearchParams } from "expo-router";
-import { CalendarRange, Info, MapPin, Settings2 } from "lucide-react-native";
+import { CalendarRange, Info, MapPin, Settings2, Calendar as IconCalendar } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Keyboard, Text, TouchableOpacity, View } from "react-native";
 import { Activities } from "./activities";
 import { Details } from "./details";
 import { Modal } from "@/components/modal";
+import { Calendar } from "@/components/calendar";
+import { DateData } from "react-native-calendars";
+import { calendarUtils, DatesSelected } from "@/utils/calendarUtils";
 
 export type TripData = TripDetails & {when: string}
 enum MODAL {
@@ -25,6 +28,7 @@ export default function Trip() {
   const [option, setOption] = useState<"activity" | "details">("activity")
   const [showModal, setShowModal] = useState(MODAL.NONE)
   const [destination, setDestination] = useState("")
+  const [selectedDates, setSelectedDates] = useState({} as DatesSelected)
 
   const tripId = useLocalSearchParams<{id: string}>().id
 
@@ -64,6 +68,15 @@ export default function Trip() {
 
   if (isLoadingTrip)  {
     return <Loading />
+  }
+
+  function handleSelectDate(selectedDay: DateData) {
+    const dates = calendarUtils.orderStartsAtAndEndsAt({
+      startsAt: selectedDates.startsAt,
+      endsAt: selectedDates.endsAt,
+      selectedDay,
+    })
+    setSelectedDates(dates)
   }
 
   return (
@@ -112,8 +125,37 @@ export default function Trip() {
             <MapPin color={colors.zinc[400]} size={20}/>
             <Input.Field placeholder="Para onde?" onChangeText={setDestination} value={destination}/>
           </Input>
+          <Input variant="secondary">
+            <IconCalendar color={colors.zinc[400]} size={20}/>
+            <Input.Field
+            placeholder="Quando?"
+            onChangeText={setDestination}
+            value={destination}
+            onPressIn={() => setShowModal(MODAL.CALENDAR)}
+            onFocus={() => Keyboard.dismiss()}
+            />
+          </Input>
       </View>
     </Modal>
+
+    <Modal
+          title="Selecionar datas"
+          subtitle="Selecione a data de ida e volta da viagem"
+          visible={showModal === MODAL.CALENDAR}
+          onClose={() =>setShowModal(MODAL.NONE)}
+          >
+          <View className=' gap-4 mt-4'>
+            <Calendar
+              minDate={dayjs().toISOString()}
+              onDayPress={handleSelectDate}
+              markedDates={selectedDates.dates}
+            />
+            <Button onPress={() => setShowModal(MODAL.NONE)}>
+              <Button.Title>Confirmar</Button.Title>
+            </Button>
+          </View>
+
+          </Modal>
 
   </View>
   )
