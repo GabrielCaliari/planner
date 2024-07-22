@@ -10,14 +10,21 @@ import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Activities } from "./activities";
 import { Details } from "./details";
-
+import { Modal } from "@/components/modal";
 
 export type TripData = TripDetails & {when: string}
+enum MODAL {
+  NONE = 0,
+  UPDATE_TRIP = 1,
+  CALENDAR = 2,
+}
 
 export default function Trip() {
   const [isLoadingTrip, setIsLoadingTrip] = useState(true)
   const [tripDetails, setTripDetails] = useState({} as TripData)
   const [option, setOption] = useState<"activity" | "details">("activity")
+  const [showModal, setShowModal] = useState(MODAL.NONE)
+  const [destination, setDestination] = useState("")
 
   const tripId = useLocalSearchParams<{id: string}>().id
 
@@ -67,16 +74,14 @@ export default function Trip() {
       <TouchableOpacity
       activeOpacity={0.6}
       className="w-9 h-9 bg-zinc-800 items-center justify-center rounded"
+      onPress={() => setShowModal(MODAL.UPDATE_TRIP)}
       >
         <Settings2 color={colors.zinc[400]} size={20}/>
       </TouchableOpacity>
     </Input>
-
     {
       option === "activity" ? <Activities tripDetails={tripDetails}/> : <Details tripId={tripDetails.id}/>
     }
-
-
     <View className="w-full absolute -bottom-1 self-center justify-end pb-5 z-10 bg-zinc-950">
         <View className="w-full flex-row bg-zinc-900 p-4 rounded-lg border border-zinc-800  gap-2">
             <Button className="flex-1 w-48" onPress={() => setOption("activity")}
@@ -95,6 +100,20 @@ export default function Trip() {
             </Button>
         </View>
     </View>
+
+    <Modal
+    title="Atualizar viagem"
+    subtitle="Somente quem criou a viagem pode editar."
+    visible={showModal === MODAL.UPDATE_TRIP}
+    onClose={() => setShowModal(MODAL.NONE)}
+    >
+      <View className="gap-2 my-4">
+          <Input variant="secondary">
+            <MapPin color={colors.zinc[400]} size={20}/>
+            <Input.Field placeholder="Para onde?" onChangeText={setDestination} value={destination}/>
+          </Input>
+      </View>
+    </Modal>
 
   </View>
   )
