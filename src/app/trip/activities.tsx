@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Keyboard, Text, View } from "react-native";
+import { Alert, Keyboard, Text, View } from "react-native";
 import { TripData } from "./[id]";
 import { Button } from "@/components/button";
 import { PlusIcon, Tag, Calendar as IconCalendar, Clock } from "lucide-react-native";
@@ -8,6 +8,7 @@ import { Modal } from "@/components/modal";
 import { Input } from "@/components/input";
 import dayjs from "dayjs";
 import { Calendar } from "@/components/calendar";
+import { activitiesServer } from "@/server/activities-server";
 
 
 
@@ -26,7 +27,39 @@ const [showModal, setShowModal] = useState(MODAL.NONE);
 const [activityTitle, setActivityTitle] = useState("")
 const [activityDate, setActivityDate] = useState("")
 const [activityHour, setActivityHour] = useState("")
+const [isCreatingActivity, setIsCreatingActivity] = useState(false)
 
+
+function resetNewActivityFilds(){
+  setActivityDate("")
+  setActivityTitle("")
+  setActivityHour("")
+  setShowModal(MODAL.NONE)
+}
+
+  async function handleCrateTripActivity(){
+    try {
+      if (!activityTitle || !activityDate || !activityHour) {
+        return Alert.alert("Cadastrar atividade", "Preencha todos os campos")
+      }
+      setIsCreatingActivity (true)
+
+      await activitiesServer.create({
+        tripId: tripDetails.id,
+        occurs_at: dayjs(activityDate).add(Number(activityHour), "h").toString(),
+        title: activityTitle,
+      })
+
+      Alert.alert("Nova Atividade", "Nova atividade cadastrada com sucesso!")
+
+    resetNewActivityFilds()
+
+    } catch (error) {
+      throw error
+    } finally {
+      setIsCreatingActivity(false)
+    }
+  }
 
   return (
   <View className="flex-1">
@@ -76,10 +109,10 @@ const [activityHour, setActivityHour] = useState("")
           />
         </Input>
       </View>
-
-
-
       </View>
+        <Button onPress={handleCrateTripActivity} isLoading={isCreatingActivity}>
+          <Button.Title>Salvar atividade</Button.Title>
+        </Button>
     </Modal>
     <Modal
     title="Selecione a data"
