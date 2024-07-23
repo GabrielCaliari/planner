@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Alert, Keyboard, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Alert, Keyboard, SectionList, Text, View } from "react-native";
 import { TripData } from "./[id]";
 import { Button } from "@/components/button";
 import { PlusIcon, Tag, Calendar as IconCalendar, Clock } from "lucide-react-native";
@@ -9,6 +9,7 @@ import { Input } from "@/components/input";
 import dayjs from "dayjs";
 import { Calendar } from "@/components/calendar";
 import { activitiesServer } from "@/server/activities-server";
+import { Activity, ActivityProps } from "@/components/activity";
 
 
 
@@ -22,13 +23,22 @@ enum MODAL {
   NEW_ACTIVITY = 2,
 }
 
+type TripActivities = {
+  title: {
+    dayNumber: number;
+    dayName: string;
+  }
+  data: ActivityProps[]
+}
+
 export const Activities = ({ tripDetails }: Props) => {
 const [showModal, setShowModal] = useState(MODAL.NONE);
 const [activityTitle, setActivityTitle] = useState("")
 const [activityDate, setActivityDate] = useState("")
 const [activityHour, setActivityHour] = useState("")
 const [isCreatingActivity, setIsCreatingActivity] = useState(false)
-
+const [isLoadingActivities, setIsLoadingActivities] = useState(true)
+const [tripActivities, setTripActivities] = useState<TripActivities[]>([])
 
 function resetNewActivityFilds(){
   setActivityDate("")
@@ -61,6 +71,34 @@ function resetNewActivityFilds(){
     }
   }
 
+  async function getTripActivities(){
+    try {
+      const activies = await activitiesServer.getActivitiesByTripId(tripDetails.id)
+      const activitiesToSectionList = activies.map((dayActivity) => ({
+        title: {
+          dayNumber: dayjs(dayActivity.date).date(),
+          dayName: dayjs(dayActivity.date).format("dddd").replace("-feira", ""),
+        },
+        data: dayActivity.activities.map((activity) => ({
+          id: activity.id,
+          title: activity.title,
+          hour: dayjs(activity.occurs_at).format("hh[:]mm[h]"),
+          isBefore: dayjs(activity.occurs_at).isBefore(dayjs())
+        }))
+      }))
+
+      setTripActivities(activitiesToSectionList)
+    } catch (error) {
+      throw error
+    } finally {
+      setIsLoadingActivities(false)
+    }
+  }
+
+  useEffect(() => {
+    getTripActivities()
+  }, [])
+
   return (
   <View className="flex-1">
     <View className=" w-full flex-row mt-5 mb-6 items-center">
@@ -72,6 +110,29 @@ function resetNewActivityFilds(){
         <Button.Title>Nova atividade</Button.Title>
       </Button>
     </View>
+
+    <SectionList
+    sections={tripActivities}
+    keyExtractor={(item) => item.id}
+    renderItem={({item}) => <Activity data={item}/>}
+    renderSectionHeader={({section}) => (
+      <View className="w-full">
+        <Text className="text-zinc-50 text-2xl font-semibold py-2">
+          Dia {section.title.dayNumber + " "}
+          <Text className="text-zinc-500 text-base font-regular capitalize">
+              {section.title.dayName }
+          </Text>
+        </Text>
+        {
+          section.data.length === 0 && (
+            <Text className="text-zinc-500 font-regular text-sm mb-8">Nenhuma atividade cadastrada nessa data.</Text>
+          )}
+      </View>
+    )}
+     contentContainerClassName="gap-3 pb-48"
+     showsVerticalScrollIndicator={false}
+    />
+
     <Modal
     title="Cadastrar atividade"
     subtitle="Todos os convidados podem visualizar as atividades."
