@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import { Calendar } from "@/components/calendar";
 import { activitiesServer } from "@/server/activities-server";
 import { Activity, ActivityProps } from "@/components/activity";
+import { Loading } from "@/components/loading";
 
 
 
@@ -110,7 +111,8 @@ function resetNewActivityFilds(){
         <Button.Title>Nova atividade</Button.Title>
       </Button>
     </View>
-
+    {
+      isLoadingActivities ? <Loading />  : (
     <SectionList
     sections={tripActivities}
     keyExtractor={(item) => item.id}
@@ -132,7 +134,7 @@ function resetNewActivityFilds(){
      contentContainerClassName="gap-3 pb-48"
      showsVerticalScrollIndicator={false}
     />
-
+    )}
     <Modal
     title="Cadastrar atividade"
     subtitle="Todos os convidados podem visualizar as atividades."
@@ -174,6 +176,7 @@ function resetNewActivityFilds(){
         <Button onPress={handleCrateTripActivity} isLoading={isCreatingActivity}>
           <Button.Title>Salvar atividade</Button.Title>
         </Button>
+
     </Modal>
     <Modal
     title="Selecione a data"
