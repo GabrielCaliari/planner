@@ -109,7 +109,7 @@ export const  Details = ({tripId}: {tripId: string}) =>  {
       data={participants}
       keyExtractor={(item) => item.id}
       renderItem={({ item}) => <Participant data={item}/>}
-      contentContainerClassName="gap-4"
+      contentContainerClassName="gap-4 pb-44"
     />
   </View>
 

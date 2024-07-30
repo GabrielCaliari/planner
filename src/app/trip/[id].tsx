@@ -197,6 +197,24 @@ export default function Trip() {
 
     </Modal>
 
+    <Modal title="Confirmar presença" visible={true} >
+        <View className="gap-4 mt-4">
+          <Text className="text-zinc-400 font-regular leading-6 my-2">
+              Você foi convidado (a) para participar de uma viagem para
+            <Text className="font-semibold text-zinc-100"> {""} {tripDetails.destination}{" "}</Text>
+            <Text>nas datas de {""}</Text>
+            <Text className="font-semibold text-zinc-100">
+              {dayjs(tripDetails.starts_at).date()} a
+              {" "}
+              {dayjs(tripDetails.ends_at).date()} de {" "}
+              {dayjs(tripDetails.ends_at).format("MMMM")}. {"\n\n"}
+            </Text>
+              Para confirmar sua presença na viagem, preencha os dados abaixo:
+          </Text>
+
+        </View>
+    </Modal>
+
   </View>
   )
 }
