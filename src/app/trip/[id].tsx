@@ -23,6 +23,7 @@ enum MODAL {
   NONE = 0,
   UPDATE_TRIP = 1,
   CALENDAR = 2,
+  CONFIRM_ATTENDANCE = 3,
 }
 
 export default function Trip() {
@@ -37,11 +38,15 @@ export default function Trip() {
   const [guestEmail, setGuestEmail] = useState("")
   const [isConfirming, setIsConfirming] = useState(false)
 
-  const tripParams = useLocalSearchParams<{id: string, participant ?: string}>()
+  const tripParams = useLocalSearchParams<{id: string, participant?: string}>()
 
   async function getTripDetails() {
     try {
       setIsLoadingTrip(true)
+
+      if(tripParams.participant) {
+        setShowModal(MODAL.CONFIRM_ATTENDANCE)
+      }
 
       if(!tripParams.id){
         return router.back()
@@ -132,9 +137,30 @@ export default function Trip() {
 
       setShowModal(MODAL.NONE)
     } catch (error) {
-
+      console.log(error)
+      Alert.alert("Confirmação", "Não foi possivel confirmar!")
     }finally {
       setIsConfirming(false)
+    }
+  }
+
+  async function handleRemoveTrip() {
+    try {
+      Alert.alert("Remover viagem", "Tem certeza que deseja remover a viagem", [
+        {
+          text: "Não",
+          style: "cancel"
+        },
+        {
+          text: "Sim",
+          onPress: async () => {
+            await tripStorage.remove()
+            router.navigate("/")
+          }
+        }
+      ])
+    } catch (error) {
+
     }
   }
 
@@ -214,6 +240,10 @@ export default function Trip() {
           <Button onPress={handleUpdateTrip} isLoading={isUpdatingTrip}>
             <Button.Title>Atualizar</Button.Title>
           </Button>
+
+          <TouchableOpacity activeOpacity={0.8} onPress={handleRemoveTrip}>
+            <Text className="text-red-400 text-center mt-6">Remover viagem</Text>
+          </TouchableOpacity>
       </View>
     </Modal>
 
@@ -236,7 +266,7 @@ export default function Trip() {
 
     </Modal>
 
-    <Modal title="Confirmar presença" visible={true} >
+    <Modal title="Confirmar presença" visible={showModal === MODAL.CONFIRM_ATTENDANCE} >
         <View className="gap-4 mt-4">
           <Text className="text-zinc-400 font-regular leading-6 my-2">
               Você foi convidado (a) para participar de uma viagem para
