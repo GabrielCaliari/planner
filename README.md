@@ -12,7 +12,13 @@ Planeje o destino, datas, convidados, atividades e links essenciais da sua próx
 ## 📱 Demonstração
 
 <p align="center">
-  <img alt="Planner - Planejador de viagens" src="./assets/images/icon.png" width="200">
+  <img alt="Planner - Tela 1" src="./assets/images/Screenshot_1770644652.png" width="45%">
+  <img alt="Planner - Tela 2" src="./assets/images/Screenshot_1770644714.png" width="45%">
+</p>
+
+<p align="center">
+  <img alt="Planner - Tela 3" src="./assets/images/Screenshot_1770644719.png" width="45%">
+  <img alt="Planner - Tela 4" src="./assets/images/Screenshot_1770645622.png" width="45%">
 </p>
 
 <p align="center">
