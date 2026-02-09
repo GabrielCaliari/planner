@@ -124,14 +124,34 @@ enum MODAL {
         emails_to_invite: emailsToInvite,
       })
 
+      const tripId = newTrip.tripId ?? (newTrip as { id?: string }).id
+      if (!tripId) {
+        throw new Error("Servidor não retornou o ID da viagem.")
+      }
+
       Alert.alert("Nova viagem", "Viagem criada com sucesso", [
         {
           text: "Ok, Continuar.",
-          onPress: () => saveTrip(newTrip.tripId),
+          onPress: () => saveTrip(tripId),
         }
       ])
     } catch (error) {
       setIsCreateTrip(false)
+      const message =
+        (error as { response?: { status?: number } })?.response?.status === 404
+          ? "Servidor não encontrado. Verifique o endereço e se o backend está rodando."
+          : (error as Error)?.message ||
+            "Não foi possível criar a viagem. Verifique se o servidor está rodando (ex: npm run dev no backend)."
+      Alert.alert("Erro ao criar viagem", message, [
+        { text: "Ok" },
+        {
+          text: "Continuar em modo teste",
+          onPress: () => {
+            const testId = "teste-" + Date.now()
+            saveTrip(testId)
+          },
+        },
+      ])
     }
   }
 
