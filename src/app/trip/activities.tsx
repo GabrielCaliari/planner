@@ -8,9 +8,9 @@ import { Modal } from "@/components/modal";
 import { Input } from "@/components/input";
 import dayjs from "dayjs";
 import { Calendar } from "@/components/calendar";
-import { activitiesServer } from "@/server/activities-server";
 import { Activity, ActivityProps } from "@/components/activity";
 import { Loading } from "@/components/loading";
+import { isTestTripId, getTestActivities, addTestActivity } from "@/storage/testTripData";
 
 
 
@@ -48,34 +48,32 @@ function resetNewActivityFilds(){
   setShowModal(MODAL.NONE)
 }
 
-  async function handleCrateTripActivity(){
+  async function handleCrateTripActivity() {
+    if (!activityTitle || !activityDate || !activityHour) {
+      return Alert.alert("Cadastrar atividade", "Preencha todos os campos")
+    }
     try {
-      if (!activityTitle || !activityDate || !activityHour) {
-        return Alert.alert("Cadastrar atividade", "Preencha todos os campos")
-      }
-      setIsCreatingActivity (true)
-
-      await activitiesServer.create({
-        tripId: tripDetails.id,
-        occurs_at: dayjs(activityDate).add(Number(activityHour), "h").toString(),
-        title: activityTitle,
-      })
-
+      setIsCreatingActivity(true)
+      const occursAt = dayjs(activityDate).add(Number(activityHour), "h").toString()
+      await addTestActivity(tripDetails.id, { title: activityTitle, occurs_at: occursAt })
       Alert.alert("Nova Atividade", "Nova atividade cadastrada com sucesso!")
-
-    resetNewActivityFilds()
-
-    } catch (error) {
-      throw error
+      resetNewActivityFilds()
+      await getTripActivities()
+    } catch {
+      Alert.alert("Cadastrar atividade", "Não foi possível salvar.")
     } finally {
       setIsCreatingActivity(false)
     }
   }
 
-  async function getTripActivities(){
+  async function getTripActivities() {
     try {
-      const activies = await activitiesServer.getActivitiesByTripId(tripDetails.id)
-      const activitiesToSectionList = activies.map((dayActivity) => ({
+      if (!isTestTripId(tripDetails.id)) {
+        setTripActivities([])
+        return
+      }
+      const dayActivities = await getTestActivities(tripDetails.id)
+      const activitiesToSectionList = dayActivities.map((dayActivity) => ({
         title: {
           dayNumber: dayjs(dayActivity.date).date(),
           dayName: dayjs(dayActivity.date).format("dddd").replace("-feira", ""),
@@ -83,14 +81,13 @@ function resetNewActivityFilds(){
         data: dayActivity.activities.map((activity) => ({
           id: activity.id,
           title: activity.title,
-          hour: dayjs(activity.occurs_at).format("hh[:]mm[h]"),
-          isBefore: dayjs(activity.occurs_at).isBefore(dayjs())
-        }))
+          hour: dayjs(activity.occurs_at).format("HH:mm"),
+          isBefore: dayjs(activity.occurs_at).isBefore(dayjs()),
+        })),
       }))
-
       setTripActivities(activitiesToSectionList)
-    } catch (error) {
-      throw error
+    } catch {
+      setTripActivities([])
     } finally {
       setIsLoadingActivities(false)
     }

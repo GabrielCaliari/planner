@@ -1,7 +1,7 @@
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import { Loading } from "@/components/loading";
-import { TripDetails, tripServer } from "@/server/trip-server";
+import { TripDetails } from "@/server/trip-server";
 import { colors } from "@/styles/colors";
 import dayjs from "dayjs";
 import { router, useLocalSearchParams } from "expo-router";
@@ -15,8 +15,8 @@ import { Calendar } from "@/components/calendar";
 import { DateData } from "react-native-calendars";
 import { calendarUtils, DatesSelected } from "@/utils/calendarUtils";
 import { validateInput } from "@/utils/validateInput";
-import { participantsServer } from "@/server/participants-server";
 import { tripStorage } from "@/storage/trip";
+import { getTestTripData, setTestTripData, isTestTripId, addTestParticipant } from "@/storage/testTripData";
 
 export type TripData = TripDetails & {when: string}
 enum MODAL {
@@ -43,120 +43,90 @@ export default function Trip() {
   async function getTripDetails() {
     try {
       setIsLoadingTrip(true)
+      if (tripParams.participant) setShowModal(MODAL.CONFIRM_ATTENDANCE)
+      if (!tripParams.id) return router.back()
 
-      if(tripParams.participant) {
-        setShowModal(MODAL.CONFIRM_ATTENDANCE)
-      }
-
-      if(!tripParams.id){
-        return router.back()
-      }
-
-      // Modo teste: viagem criada sem backend (ex.: "teste-1234567890")
-      if (tripParams.id.startsWith("teste-")) {
-        const mockStarts = dayjs().add(7, "day")
-        const mockEnds = dayjs().add(14, "day")
-        const mockDestination = "Viagem de teste"
-        setDestination(mockDestination)
-        setTripDetails({
-          id: tripParams.id,
-          destination: mockDestination,
-          starts_at: mockStarts.toString(),
-          ends_at: mockEnds.toString(),
-          is_confirmed: false,
-          when: `${mockDestination} de ${mockStarts.format("DD")} a ${mockEnds.format("DD")} de ${mockStarts.format("MMM")}.`,
-        })
-        return
-      }
-
-      const trip = await tripServer.getById(tripParams.id)
-
-      const maxLengthDestination = 14
-      const destination = trip.destination.length > maxLengthDestination
-      ? trip.destination.slice(0, maxLengthDestination) + "..." : trip.destination
-
-      const start_at = dayjs(trip.starts_at).format("DD")
-      const ends_at = dayjs(trip.ends_at).format("DD")
-      const month = dayjs(trip.starts_at).format("MMM")
-
-      setDestination(trip.destination)
-
+      // App em modo teste: dados só locais, sem servidor
+      const saved = await getTestTripData(tripParams.id)
+      const mockStarts = saved ? dayjs(saved.starts_at) : dayjs().add(7, "day")
+      const mockEnds = saved ? dayjs(saved.ends_at) : dayjs().add(14, "day")
+      const dest = saved?.destination ?? "Viagem de teste"
+      const maxLen = 14
+      const whenText = `${dest.length > maxLen ? dest.slice(0, maxLen) + "..." : dest} de ${mockStarts.format("DD")} a ${mockEnds.format("DD")} de ${mockStarts.format("MMM")}.`
+      setDestination(dest)
       setTripDetails({
-        ...trip,
-        when: `${destination} de ${start_at} a ${ends_at} de ${month}.`,
+        id: tripParams.id,
+        destination: dest,
+        starts_at: mockStarts.toString(),
+        ends_at: mockEnds.toString(),
+        is_confirmed: false,
+        when: whenText,
       })
-
-    } catch (error) {
-
+      const startData: DateData = { dateString: mockStarts.format("YYYY-MM-DD"), day: mockStarts.date(), month: mockStarts.month() + 1, year: mockStarts.year(), timestamp: mockStarts.valueOf() }
+      const endData: DateData = { dateString: mockEnds.format("YYYY-MM-DD"), day: mockEnds.date(), month: mockEnds.month() + 1, year: mockEnds.year(), timestamp: mockEnds.valueOf() }
+      const first = calendarUtils.orderStartsAtAndEndsAt({ selectedDay: startData, startsAt: undefined, endsAt: undefined })
+      setSelectedDates(calendarUtils.orderStartsAtAndEndsAt({ ...first, selectedDay: endData }))
+    } catch {
+      // fallback mock
+      const mockStarts = dayjs().add(7, "day")
+      const mockEnds = dayjs().add(14, "day")
+      setDestination("Viagem de teste")
+      setTripDetails({
+        id: tripParams.id,
+        destination: "Viagem de teste",
+        starts_at: mockStarts.toString(),
+        ends_at: mockEnds.toString(),
+        is_confirmed: false,
+        when: `Viagem de teste de ${mockStarts.format("DD")} a ${mockEnds.format("DD")} de ${mockStarts.format("MMM")}.`,
+      })
     } finally {
       setIsLoadingTrip(false)
     }
   }
 
   async function handleUpdateTrip() {
-      try {
-        if (!tripParams.id) {
-          return
-        }
-        if (!destination || !selectedDates.startsAt || !selectedDates.endsAt) {
-          return Alert.alert("Atualizar viagem", "Lembre-se de, além de preencher o destino, selecione data de início e fim da viagem")
-        }
-
+    if (!tripParams.id) return
+    if (!destination || !selectedDates.startsAt || !selectedDates.endsAt) {
+      return Alert.alert("Atualizar viagem", "Lembre-se de, além de preencher o destino, selecione data de início e fim da viagem")
+    }
+    try {
       setIsUpdatingTrip(true)
-
-      await tripServer.update({
-        id: tripParams.id,
-        destination,
-        starts_at: dayjs(selectedDates.startsAt.dateString).toString(),
-        ends_at: dayjs(selectedDates.endsAt.dateString).toString()
-      })
-
-        Alert.alert("Atualizar viagem", "Viagem atualizada com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              setShowModal(MODAL.NONE)
-              getTripDetails()
-            }
-          }
-        ])
-      } catch (error) {
-          throw error
-      } finally {
-        setIsUpdatingTrip(false)
+      if (isTestTripId(tripParams.id)) {
+        await setTestTripData(tripParams.id, {
+          destination,
+          starts_at: dayjs(selectedDates.startsAt.dateString).toString(),
+          ends_at: dayjs(selectedDates.endsAt.dateString).toString(),
+        })
+        const whenText = `${destination.length > 14 ? destination.slice(0, 14) + "..." : destination} de ${dayjs(selectedDates.startsAt.dateString).format("DD")} a ${dayjs(selectedDates.endsAt.dateString).format("DD")} de ${dayjs(selectedDates.startsAt.dateString).format("MMM")}.`
+        setTripDetails((prev) => ({ ...prev, destination, when: whenText, starts_at: dayjs(selectedDates.startsAt!.dateString).toString(), ends_at: dayjs(selectedDates.endsAt!.dateString).toString() }))
       }
+      Alert.alert("Atualizar viagem", "Viagem atualizada com sucesso!", [
+        { text: "OK", onPress: () => { setShowModal(MODAL.NONE); getTripDetails() } },
+      ])
+    } catch {
+      Alert.alert("Atualizar viagem", "Não foi possível atualizar.")
+    } finally {
+      setIsUpdatingTrip(false)
+    }
   }
 
   async function handleConfirm() {
+    if (!tripParams.id || !guestName.trim() || !guestEmail.trim()) {
+      if (!guestName.trim() || !guestEmail.trim()) return Alert.alert("Confirmação", "Preencha nome e e-mail para confirmar a viagem!")
+      return
+    }
+    if (!validateInput.email(guestEmail.trim())) return Alert.alert("Confirmação", "E-mail invalido")
     try {
-       if(!tripParams.id || !tripParams.participant) {
-        return
-       }
-
-      if(!guestName.trim() || !guestEmail.trim()) {
-        return Alert.alert("Confirmação", "Preencha nome e e-mail para confirmar a viagem!")
-      }
-
-      if(!validateInput.email(guestEmail.trim())) {
-        return Alert.alert("Confirmação", "E-mail invalido")
-      }
       setIsConfirming(true)
-
-      await participantsServer.confirmTripByParticipantId({
-        participantId: tripParams.participant,
-        name: guestName,
-        email: guestEmail.trim(),
-      })
-
-      Alert.alert("Confirmação", "Viagem confirmada com sucesso!")
-
-      await tripStorage.save(tripParams.id)
-
-      setShowModal(MODAL.NONE)
-    } catch (error) {
-      console.log(error)
+      if (isTestTripId(tripParams.id)) {
+        await addTestParticipant(tripParams.id, { name: guestName.trim(), email: guestEmail.trim(), is_confirmed: true })
+        await tripStorage.save(tripParams.id)
+        Alert.alert("Confirmação", "Viagem confirmada com sucesso!")
+        setShowModal(MODAL.NONE)
+      }
+    } catch {
       Alert.alert("Confirmação", "Não foi possivel confirmar!")
-    }finally {
+    } finally {
       setIsConfirming(false)
     }
   }

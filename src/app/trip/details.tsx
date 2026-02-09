@@ -3,14 +3,12 @@ import { Input } from "@/components/input";
 import { Modal } from "@/components/modal";
 import { Participant, ParticipantProps } from "@/components/participant";
 import { TripLink, TripLinkProps } from "@/components/tripLink";
-import { linksServer } from "@/server/links-server";
-import { participantsServer } from "@/server/participants-server";
 import { colors } from "@/styles/colors";
+import { isTestTripId, getTestLinks, addTestLink, getTestParticipants } from "@/storage/testTripData";
 import { validateInput } from "@/utils/validateInput";
 import { Plus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Alert, FlatList, Text, View } from "react-native";
-import { set } from "zod";
 
 export const  Details = ({tripId}: {tripId: string}) =>  {
   const [showNewLinkModal, setShowNewLinkModal] = useState(false)
@@ -27,48 +25,40 @@ export const  Details = ({tripId}: {tripId: string}) =>  {
   }
 
   async function handleCreateLinkTrip() {
+    if (!linkName.trim()) return Alert.alert("Link", "Informe um titulo para o link")
+    if (!validateInput.url(linkURL.trim())) return Alert.alert("Link", "Link invalido!")
     try {
-      if(!linkName.trim()){
-        return Alert.alert("Link", "Informe um titulo para o link");
-      }
-
-      if(!validateInput.url(linkURL.trim())){
-        return Alert.alert("Link", "Link invalido!");
-      }
-
       setIsCreatingLinkTrip(true)
-
-      await linksServer.create({
-        tripId,
-        title: linkName,
-        url: linkURL,
-      })
-
-      Alert.alert("Link", "Link criado com sucesso!")
-      resetNewLinkFields()
-      await getTripLinks()
-    } catch (error) {
-
+      if (isTestTripId(tripId)) {
+        await addTestLink(tripId, { title: linkName.trim(), url: linkURL.trim() })
+        Alert.alert("Link", "Link criado com sucesso!")
+        resetNewLinkFields()
+        await getTripLinks()
+      }
+    } catch {
+      Alert.alert("Link", "Não foi possível salvar.")
     } finally {
       setIsCreatingLinkTrip(false)
     }
   }
 
   async function getTripLinks() {
-      try {
-        const links = await linksServer.getLinksByTripId(tripId)
-        setLinks(links)
-      } catch (error) {
-
-      }
+    try {
+      if (!isTestTripId(tripId)) return
+      const list = await getTestLinks(tripId)
+      setLinks(list)
+    } catch {
+      setLinks([])
+    }
   }
 
   async function getTripParticipants() {
     try {
-      const participants = await participantsServer.getByTripId(tripId)
-      setParticipants(participants)
-    } catch (error) {
-
+      if (!isTestTripId(tripId)) return
+      const list = await getTestParticipants(tripId)
+      setParticipants(list)
+    } catch {
+      setParticipants([])
     }
   }
 

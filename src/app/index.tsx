@@ -13,8 +13,8 @@ import { GuestEmail } from "@/components/email";
 import { validateInput } from "@/utils/validateInput";
 import { tripStorage } from "@/storage/trip";
 import { router } from "expo-router";
-import { tripServer } from "@/server/trip-server";
 import { Loading } from "@/components/loading";
+import { setTestTripData } from "@/storage/testTripData";
 
 enum StepForm {
   TRIP_DETAILS = 1,
@@ -116,62 +116,32 @@ enum MODAL {
   async function createTrip() {
     try {
       setIsCreateTrip(true)
-
-      const newTrip = await tripServer.create({
+      const testId = "teste-" + Date.now()
+      await setTestTripData(testId, {
         destination,
         starts_at: dayjs(selectedDates.startsAt?.dateString).toString(),
         ends_at: dayjs(selectedDates.endsAt?.dateString).toString(),
-        emails_to_invite: emailsToInvite,
       })
-
-      const tripId = newTrip.tripId ?? (newTrip as { id?: string }).id
-      if (!tripId) {
-        throw new Error("Servidor não retornou o ID da viagem.")
-      }
-
-      Alert.alert("Nova viagem", "Viagem criada com sucesso", [
-        {
-          text: "Ok, Continuar.",
-          onPress: () => saveTrip(tripId),
-        }
-      ])
+      await tripStorage.save(testId)
+      router.navigate("/trip/" + testId)
     } catch (error) {
+      Alert.alert("Erro", "Não foi possível salvar a viagem.")
+    } finally {
       setIsCreateTrip(false)
-      const message =
-        (error as { response?: { status?: number } })?.response?.status === 404
-          ? "Servidor não encontrado. Verifique o endereço e se o backend está rodando."
-          : (error as Error)?.message ||
-            "Não foi possível criar a viagem. Verifique se o servidor está rodando (ex: npm run dev no backend)."
-      Alert.alert("Erro ao criar viagem", message, [
-        { text: "Ok" },
-        {
-          text: "Continuar em modo teste",
-          onPress: () => {
-            const testId = "teste-" + Date.now()
-            saveTrip(testId)
-          },
-        },
-      ])
     }
   }
 
   async function getTrip() {
     try {
       const tripID = await tripStorage.get()
-
       if (!tripID) {
-        return setIsGettingTrip(false)
+        setIsGettingTrip(false)
+        return
       }
-
-      const trip = await tripServer.getById(tripID)
-      console.log(trip)
-
-      if (trip) {
-        return router.navigate("/trip/" + trip.id)
-      }
-    } catch (error) {
       setIsGettingTrip(false)
-      console.log(error)
+      router.navigate("/trip/" + tripID)
+    } catch {
+      setIsGettingTrip(false)
     }
   }
 
