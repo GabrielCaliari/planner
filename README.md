@@ -11,13 +11,13 @@ Planeje o destino, datas, convidados, atividades e links essenciais da sua próx
 
 ## 📱 Demonstração
 
-Este projeto está em modo **local / teste**, focado em demonstração de funcionalidades:
+<p align="center">
+  <img alt="Planner - Planejador de viagens" src="./assets/images/icon.png" width="200">
+</p>
 
-- Ao criar uma viagem, os dados são salvos apenas no dispositivo (sem backend real)
-- Você pode abrir a mesma viagem novamente enquanto o ID estiver salvo no aparelho
-- A interface foi pensada para uso em dispositivos móveis (Expo Go, emulador ou build nativa)
-
-> Caso você publique um vídeo ou GIF do app, pode substituir esta seção por imagens ou links de demonstração.
+<p align="center">
+  <em>Convide seus amigos e planeje sua próxima viagem.</em>
+</p>
 
 ## 📌 Funcionalidades
 
@@ -60,11 +60,6 @@ Este projeto está em modo **local / teste**, focado em demonstração de funcio
   - Título (ex.: Reserva do hotel, Ingresso do parque, Passagens)
   - URL validada
 - **Lista de links importantes** visível para todos os convidados
-
-### 💾 Armazenamento local (modo teste)
-
-- Os dados de viagem, atividades, convidados e links são salvos usando **armazenamento local** e estruturas de teste
-- Não há integração com servidor real neste projeto (ideal para estudo de layout, navegação, formulários e estado)
 
 ## 🚀 Como Usar
 
@@ -117,8 +112,8 @@ Algumas pastas importantes do projeto:
 
 - `src/app`: rotas e telas principais (criação de viagem, detalhes, atividades)
 - `src/components`: componentes reutilizáveis (inputs, botões, calendário, modal, loading, etc.)
-- `src/server`: camada de serviços simulada para dados da viagem, links, participantes e atividades
-- `src/storage`: abstrações de armazenamento local (viagem atual e dados de teste)
+- `src/server`: camada de serviços para dados da viagem, links, participantes e atividades
+- `src/storage`: armazenamento local da viagem e dados do planejamento
 - `src/styles`: configurações de tema (cores, fontes, estilos globais)
 - `src/utils`: utilitários de calendário, validações e configurações de locale
 
@@ -130,28 +125,7 @@ Algumas pastas importantes do projeto:
 - **Validações amigáveis** com mensagens em português
 - **Design moderno** usando NativeWind/Tailwind
 - Separação clara entre **atividades** e **detalhes** da viagem
-
-## 🗺️ Roadmap
-
-- [x] Criar e salvar viagens localmente
-- [x] Cadastrar atividades por dia com horário
-- [x] Cadastrar links importantes da viagem
-- [x] Listar e gerenciar convidados
-- [ ] Integrar com backend real (API) para salvar viagens na nuvem
-- [ ] Enviar convites reais por e-mail para participantes
-- [ ] Adicionar notificações push para lembrar atividades
-- [ ] Suporte completo a múltiplos idiomas
-- [ ] Autenticação de usuário e múltiplas viagens por conta
-- [ ] Melhorar acessibilidade e testes automatizados
-
-## 📊 Status do Projeto
-
-Você pode ajustar estes badges com o seu usuário do GitHub:
-
-![GitHub stars](https://img.shields.io/github/stars/<seu-usuario>/planner?style=for-the-badge&logo=github&logoColor=white)
-![GitHub forks](https://img.shields.io/github/forks/<seu-usuario>/planner?style=for-the-badge&logo=github&logoColor=white)
-![GitHub issues](https://img.shields.io/github/issues/<seu-usuario>/planner?style=for-the-badge&logo=github&logoColor=white)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/<seu-usuario>/planner?style=for-the-badge&logo=github&logoColor=white)
+- Dados salvos no dispositivo para acessar sua viagem quando quiser
 
 ## 📝 Licença
 
