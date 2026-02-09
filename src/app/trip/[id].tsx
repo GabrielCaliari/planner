@@ -52,6 +52,23 @@ export default function Trip() {
         return router.back()
       }
 
+      // Modo teste: viagem criada sem backend (ex.: "teste-1234567890")
+      if (tripParams.id.startsWith("teste-")) {
+        const mockStarts = dayjs().add(7, "day")
+        const mockEnds = dayjs().add(14, "day")
+        const mockDestination = "Viagem de teste"
+        setDestination(mockDestination)
+        setTripDetails({
+          id: tripParams.id,
+          destination: mockDestination,
+          starts_at: mockStarts.toString(),
+          ends_at: mockEnds.toString(),
+          is_confirmed: false,
+          when: `${mockDestination} de ${mockStarts.format("DD")} a ${mockEnds.format("DD")} de ${mockStarts.format("MMM")}.`,
+        })
+        return
+      }
+
       const trip = await tripServer.getById(tripParams.id)
 
       const maxLengthDestination = 14
